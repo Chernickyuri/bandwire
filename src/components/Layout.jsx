@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Sidebar from './Sidebar';
+import TenantSelector from './TenantSelector';
 
 export default function Layout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -61,6 +62,7 @@ export default function Layout({ children }) {
         {/* Main content */}
         <main className="flex-1 overflow-y-auto">
           <div className="py-6 px-4 sm:px-6 lg:px-6">
+            <TenantSelector />
             {children}
           </div>
         </main>

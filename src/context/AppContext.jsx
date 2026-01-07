@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer } from 'react';
-import { defaultRules, demoPatients } from '../data/demoData';
+import { defaultRules, demoPatients, mockTenants } from '../data/demoData';
 
 const AppContext = createContext();
 
@@ -11,6 +11,7 @@ const initialState = {
     totalCost: 5000,
     downPayment: 1000,
     installments: 12,
+    breakdown: [], // Treatment breakdown (services and materials)
   },
   agreement: {
     finalized: false,
@@ -32,6 +33,8 @@ const initialState = {
   followUpQueue: [],
   rules: defaultRules,
   customPatients: [], // Store newly created patients
+  tenants: mockTenants,
+  currentTenant: mockTenants[0], // Default to first tenant
 };
 
 function appReducer(state, action) {
@@ -56,6 +59,15 @@ function appReducer(state, action) {
         ...state,
         currentPatient: newPatient,
         customPatients: [...state.customPatients, newPatient],
+      };
+    case 'BULK_IMPORT_PATIENTS':
+      const importedPatients = action.payload.map((patientData, index) => ({
+        ...patientData,
+        id: `patient-import-${Date.now()}-${index}`,
+      }));
+      return {
+        ...state,
+        customPatients: [...state.customPatients, ...importedPatients],
       };
     case 'UPDATE_CONSULTATION':
       return {
@@ -169,6 +181,11 @@ function appReducer(state, action) {
           ...action.payload,
         },
       };
+    case 'SET_CURRENT_TENANT':
+      return {
+        ...state,
+        currentTenant: action.payload,
+      };
     default:
       return state;
   }
@@ -183,6 +200,10 @@ export function AppProvider({ children }) {
 
   const createPatient = (patientData) => {
     dispatch({ type: 'CREATE_PATIENT', payload: patientData });
+  };
+
+  const bulkImportPatients = (patientsData) => {
+    dispatch({ type: 'BULK_IMPORT_PATIENTS', payload: patientsData });
   };
 
   const updateConsultation = (updates) => {
@@ -262,12 +283,17 @@ export function AppProvider({ children }) {
     dispatch({ type: 'SET_INTERFACE_MODE', payload: mode });
   };
 
+  const setCurrentTenant = (tenant) => {
+    dispatch({ type: 'SET_CURRENT_TENANT', payload: tenant });
+  };
+
   return (
     <AppContext.Provider
       value={{
         state,
         updatePatient,
         createPatient,
+        bulkImportPatients,
         updateConsultation,
         applyAISuggestion,
         finalizeAgreement,
@@ -281,6 +307,7 @@ export function AppProvider({ children }) {
         updateFollowUpCommunications,
         updateRules,
         setInterfaceMode,
+        setCurrentTenant,
       }}
     >
       {children}

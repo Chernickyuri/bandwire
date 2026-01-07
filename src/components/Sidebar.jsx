@@ -29,6 +29,7 @@ const clinicMenuItems = [
     category: 'Administration',
     items: [
       { path: '/admin', label: 'Settings', icon: '⚙️' },
+      { path: '/super-admin', label: 'Super Admin', icon: '👑' },
     ],
   },
 ];

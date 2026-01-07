@@ -13,7 +13,7 @@ export const formatCurrency = (amount) => {
 
 export const generateTransactionId = () => {
   const random = Math.floor(Math.random() * 100000);
-  return `STRIPE_TXN_${random.toString().padStart(5, '0')}`;
+  return `pi_${Math.random().toString(36).substr(2, 24)}`;
 };
 
 export const formatDate = (dateString) => {

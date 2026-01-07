@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { auditLogEntries, demoPatients } from '../data/demoData';
 import { formatDate } from '../utils/helpers';
+import HIPAAIndicator from '../components/HIPAAIndicator';
 
 export default function LedgerScreen() {
   const { state } = useApp();
@@ -278,6 +279,8 @@ export default function LedgerScreen() {
             )}
           </div>
         </div>
+
+        <HIPAAIndicator showDetails={true} />
 
         <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
           <div className="flex items-center">

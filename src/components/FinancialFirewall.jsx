@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function FinancialFirewall({ currentLayer, validationStatus }) {
+export default function FinancialFirewall({ currentLayer, validationStatus, validationErrors = [] }) {
   const layers = [
     {
       id: 'ai',
@@ -8,6 +8,7 @@ export default function FinancialFirewall({ currentLayer, validationStatus }) {
       description: 'Natural language dialogue, suggests payment options, provides objection handling scripts',
       status: 'active',
       icon: '🤖',
+      note: 'AI can suggest values, but cannot modify financial terms directly',
     },
     {
       id: 'dce',
@@ -15,6 +16,9 @@ export default function FinancialFirewall({ currentLayer, validationStatus }) {
       description: 'Strictly validates all financial terms against predefined rules. Blocks AI hallucinations and human errors.',
       status: validationStatus || 'pending',
       icon: '🛡️',
+      note: validationErrors.length > 0 
+        ? `${validationErrors.length} validation error(s) detected - values blocked`
+        : 'All values validated and approved',
     },
     {
       id: 'ledger',
@@ -22,6 +26,7 @@ export default function FinancialFirewall({ currentLayer, validationStatus }) {
       description: 'Immutable record of all agreements and transactions with full audit trail',
       status: 'active',
       icon: '📚',
+      note: 'All validated transactions are permanently recorded',
     },
   ];
 
@@ -55,14 +60,38 @@ export default function FinancialFirewall({ currentLayer, validationStatus }) {
                 )}
               </div>
               <p className="text-sm text-gray-600">{layer.description}</p>
+              {layer.note && (
+                <p className={`text-xs mt-2 font-medium ${
+                  layer.id === 'dce' && validationErrors.length > 0
+                    ? 'text-red-600'
+                    : layer.id === 'dce' && validationStatus === 'active'
+                    ? 'text-green-600'
+                    : 'text-gray-500'
+                }`}>
+                  {layer.id === 'dce' && validationErrors.length > 0 && '⚠️ '}
+                  {layer.id === 'dce' && validationStatus === 'active' && validationErrors.length === 0 && '✓ '}
+                  {layer.note}
+                </p>
+              )}
             </div>
           </div>
         ))}
       </div>
+      {validationErrors.length > 0 && (
+        <div className="mt-4 p-3 bg-red-50 rounded border border-red-200">
+          <p className="text-xs font-semibold text-red-900 mb-2">DCE Validation Blocked:</p>
+          <ul className="text-xs text-red-700 space-y-1">
+            {validationErrors.map((error, index) => (
+              <li key={index}>• {error.message}</li>
+            ))}
+          </ul>
+        </div>
+      )}
       <div className="mt-4 p-3 bg-white rounded border border-teal-200">
         <p className="text-xs text-gray-600">
           <strong>Security:</strong> This three-layer architecture ensures AI suggestions are validated by deterministic rules,
-          and all actions are recorded in an immutable ledger. No decision can bypass the DCE.
+          and all actions are recorded in an immutable ledger. No decision can bypass the DCE. The DCE runs server-side validation
+          to physically prevent invalid values from being saved.
         </p>
       </div>
     </div>

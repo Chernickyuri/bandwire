@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { formatCurrency, formatDate } from '../utils/helpers';
 import { calculateMonthlyPayment } from '../utils/helpers';
+import { downloadAgreementPDF } from '../utils/pdfGenerator';
 
 export default function PDFPreview() {
   const { state } = useApp();
   const { currentPatient, consultation } = state;
+  const [isGenerating, setIsGenerating] = useState(false);
   const monthlyPayment = calculateMonthlyPayment(
     consultation.totalCost,
     consultation.downPayment,
@@ -18,8 +20,44 @@ export default function PDFPreview() {
     day: 'numeric' 
   });
 
+  const handleDownloadPDF = async () => {
+    setIsGenerating(true);
+    try {
+      await downloadAgreementPDF(currentPatient, consultation);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Error generating PDF. Please try again.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   return (
     <div className="bg-white border-2 border-gray-300 rounded-lg p-8 shadow-lg" style={{ minHeight: '800px' }}>
+      <div className="mb-4 flex justify-end">
+        <button
+          onClick={handleDownloadPDF}
+          disabled={isGenerating}
+          className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white font-semibold rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+        >
+          {isGenerating ? (
+            <>
+              <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Generating PDF...
+            </>
+          ) : (
+            <>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Download PDF
+            </>
+          )}
+        </button>
+      </div>
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8 pb-6 border-b-2 border-blue-600">
@@ -71,7 +109,7 @@ export default function PDFPreview() {
         {/* Treatment Plan */}
         <div className="mb-6">
           <h2 className="text-lg font-bold text-gray-900 mb-3 uppercase tracking-wide">Treatment Plan</h2>
-          <div className="border-l-4 border-blue-600 pl-4 py-2">
+          <div className="border-l-4 border-blue-600 pl-4 py-2 mb-4">
             <p className="text-lg font-semibold text-gray-900 mb-2">{consultation.treatmentName}</p>
             <p className="text-gray-700">
               This treatment plan includes all necessary orthodontic services, adjustments, and follow-up visits 
@@ -79,6 +117,50 @@ export default function PDFPreview() {
               patient response and compliance with treatment instructions.
             </p>
           </div>
+
+          {/* Treatment Breakdown */}
+          {consultation.breakdown && consultation.breakdown.length > 0 && (
+            <div className="mt-4 bg-gray-50 rounded-lg p-4">
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">Treatment Breakdown</h3>
+              
+              {/* Services */}
+              {consultation.breakdown.filter(item => item.type === 'service').length > 0 && (
+                <div className="mb-4">
+                  <h4 className="text-xs font-semibold text-blue-700 mb-2">Services</h4>
+                  <div className="space-y-1">
+                    {consultation.breakdown.filter(item => item.type === 'service').map((item) => (
+                      <div key={item.id} className="flex justify-between items-center text-sm py-1 border-b border-gray-200">
+                        <span className="text-gray-700">{item.name} (Qty: {item.quantity})</span>
+                        <span className="font-semibold text-gray-900">{formatCurrency(item.total || 0)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Materials */}
+              {consultation.breakdown.filter(item => item.type === 'material').length > 0 && (
+                <div className="mb-4">
+                  <h4 className="text-xs font-semibold text-green-700 mb-2">Materials</h4>
+                  <div className="space-y-1">
+                    {consultation.breakdown.filter(item => item.type === 'material').map((item) => (
+                      <div key={item.id} className="flex justify-between items-center text-sm py-1 border-b border-gray-200">
+                        <span className="text-gray-700">{item.name} (Qty: {item.quantity})</span>
+                        <span className="font-semibold text-gray-900">{formatCurrency(item.total || 0)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="mt-3 pt-3 border-t-2 border-gray-300 flex justify-between items-center">
+                <span className="font-semibold text-gray-900">Total:</span>
+                <span className="text-lg font-bold text-teal-600">
+                  {formatCurrency(consultation.breakdown.reduce((sum, item) => sum + (item.total || 0), 0))}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Financial Agreement */}

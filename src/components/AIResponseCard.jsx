@@ -5,12 +5,25 @@ export default function AIResponseCard({ suggestion, onApply, canApply = true })
   if (!suggestion) return null;
 
   return (
-    <div className="bg-gradient-to-br from-teal-50 to-blue-50 border border-teal-200 rounded-lg p-6 shadow-lg">
-      <div className="flex items-center mb-4">
-        <div className="w-10 h-10 bg-gradient-to-br from-teal-500 to-blue-600 rounded-full flex items-center justify-center mr-3 shadow-md">
-          <span className="text-white font-bold">AI</span>
+    <div className="bg-gradient-to-br from-purple-50 to-indigo-50 border border-purple-200 rounded-lg p-6 shadow-lg">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center">
+          <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center mr-3 shadow-md">
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-xl font-semibold text-gray-800">AI Assistant Response</h3>
+            <p className="text-xs text-gray-500">Powered by GPT-4</p>
+          </div>
         </div>
-        <h3 className="text-xl font-semibold text-gray-800">AI Suggestion</h3>
+        <div className="flex items-center gap-2 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold">
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          GPT-4
+        </div>
       </div>
 
       <div className="mb-4">
@@ -28,7 +41,7 @@ export default function AIResponseCard({ suggestion, onApply, canApply = true })
         )}
       </div>
 
-      <div className="bg-white rounded-lg p-4 mb-4 border border-teal-200">
+      <div className="bg-white rounded-lg p-4 mb-4 border border-purple-200">
         <h4 className="font-semibold text-gray-800 mb-2">Suggested Changes:</h4>
         {suggestion.dceAutoFixed && suggestion.originalSuggestion && (
           <div className="mb-3 p-2 bg-gray-50 rounded border border-gray-200">
@@ -72,7 +85,7 @@ export default function AIResponseCard({ suggestion, onApply, canApply = true })
           disabled={!canApply}
           className={`w-full font-semibold py-3 px-6 rounded-lg transition-colors shadow-md ${
             canApply
-              ? 'bg-teal-600 hover:bg-teal-700 text-white'
+              ? 'bg-purple-600 hover:bg-purple-700 text-white'
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
           }`}
         >

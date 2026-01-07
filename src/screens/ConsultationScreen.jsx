@@ -7,6 +7,7 @@ import PaymentPresets from '../components/PaymentPresets';
 import DealSpeedTracker from '../components/DealSpeedTracker';
 import CustomerOffer from '../components/CustomerOffer';
 import AIResponseCard from '../components/AIResponseCard';
+import TreatmentBreakdown from '../components/TreatmentBreakdown';
 import { formatCurrency } from '../utils/helpers';
 import { validatePaymentPlan, autoFixPaymentPlan } from '../utils/rulesEngine';
 import { getObjectionSuggestion } from '../utils/mockAI';
@@ -38,11 +39,22 @@ export default function ConsultationScreen() {
   const handleTreatmentChange = (e) => {
     const selectedTreatment = treatmentOptions.find(t => t.id === e.target.value);
     if (selectedTreatment) {
+      const breakdown = selectedTreatment.breakdown ? [...selectedTreatment.breakdown] : [];
+      const calculatedTotal = breakdown.reduce((sum, item) => sum + (item.total || 0), 0) || selectedTreatment.typicalCost;
       updateConsultation({ 
         treatmentName: selectedTreatment.name,
-        totalCost: selectedTreatment.typicalCost,
+        totalCost: calculatedTotal,
+        breakdown: breakdown,
       });
     }
+  };
+
+  const handleBreakdownChange = (updatedBreakdown) => {
+    const newTotal = updatedBreakdown.reduce((sum, item) => sum + (item.total || 0), 0);
+    updateConsultation({ 
+      breakdown: updatedBreakdown,
+      totalCost: newTotal,
+    });
   };
 
   const handleTotalCostChange = (e) => {
@@ -177,6 +189,17 @@ export default function ConsultationScreen() {
             </div>
           </div>
         </div>
+
+        {/* Treatment Breakdown */}
+        {state.consultation.treatmentName && state.consultation.breakdown && state.consultation.breakdown.length > 0 && (
+          <div className="mb-6">
+            <TreatmentBreakdown
+              breakdown={state.consultation.breakdown}
+              onBreakdownChange={handleBreakdownChange}
+              readOnly={false}
+            />
+          </div>
+        )}
 
         <PaymentPresets onSelect={handlePresetSelect} />
 

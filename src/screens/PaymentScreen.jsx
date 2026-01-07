@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { formatCurrency, formatDate } from '../utils/helpers';
-import { demoPatients, mockPayments } from '../data/demoData';
+import { demoPatients, mockPayments, mockRecurringPayments } from '../data/demoData';
+import RecurringPaymentCard from '../components/RecurringPaymentCard';
 
 export default function PaymentScreen() {
   const { state } = useApp();
@@ -283,8 +284,16 @@ export default function PaymentScreen() {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
-            <p className="text-gray-600 mt-1 text-sm">View and manage all payment transactions</p>
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
+              <div className="flex items-center gap-2 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold">
+                <svg className="w-4 h-4" viewBox="0 0 468 222" fill="none">
+                  <path d="M414 113.4c0-25.6-12.4-45.8-36.1-45.8-23.8 0-38.2 20.2-38.2 45.6 0 30.1 17 45.7 39.5 45.7 6.3 0 11.9-.8 16.3-2.1v-20.7h-15.7v14.4c0 8.3-4.3 13.6-11.2 13.6-8.4 0-12.5-6.2-12.5-13.8 0-21.1 11.1-33.2 23.9-33.2 6.3 0 10.6 2.4 13.6 6.9l11.1-7.5c-4.6-7.2-12.9-12-24.7-12-21.5 0-39.5 16.8-39.5 45.7 0 28.9 18 45.7 39.5 45.7 11.8 0 20.1-4.8 24.7-12l-11.1-7.5c-3 4.5-7.3 6.9-13.6 6.9-12.8 0-23.9-12.1-23.9-33.2 0-7.6 4.1-13.8 12.5-13.8 6.9 0 11.2 5.3 11.2 13.6v13.8h15.7v20.7c-4.4 1.3-10 2.1-16.3 2.1-22.5 0-39.5-15.6-39.5-45.7 0-25.4 14.4-45.6 38.2-45.6 23.7 0 36.1 20.2 36.1 45.8z" fill="#635BFF"/>
+                </svg>
+                <span>Stripe</span>
+              </div>
+            </div>
+            <p className="text-gray-600 mt-1 text-sm">View and manage all payment transactions processed via Stripe</p>
           </div>
           <div className="text-right">
             <div className="text-sm text-gray-500">Total Processed</div>
@@ -560,6 +569,36 @@ export default function PaymentScreen() {
             View Financial Ledger
           </button>
         </div>
+      </div>
+
+      {/* Recurring Payments Section */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mt-6">
+        <div className="mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">Recurring Payments</h2>
+              <p className="text-gray-600 mt-1 text-sm">Automated monthly payments via Stripe Subscriptions</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500">Powered by</span>
+              <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold">
+                Stripe Subscriptions
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          {mockRecurringPayments.map((payment) => (
+            <RecurringPaymentCard key={payment.id} payment={payment} />
+          ))}
+        </div>
+
+        {mockRecurringPayments.length === 0 && (
+          <div className="text-center py-12 text-gray-500">
+            <p>No recurring payments configured</p>
+          </div>
+        )}
       </div>
     </div>
   );

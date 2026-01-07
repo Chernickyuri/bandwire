@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import FollowUpTimeline from '../components/FollowUpTimeline';
+import SMSMessage from '../components/SMSMessage';
 import { formatDate, formatCurrency } from '../utils/helpers';
 import { mockAgreements, demoPatients, initialFollowUpQueue } from '../data/demoData';
 
@@ -143,6 +144,9 @@ export default function FollowUpScreen() {
   const agreement = agreementId === 'CURRENT' 
     ? { id: 'CURRENT', patientId, patientName: state.currentPatient?.name, treatmentName: state.consultation.treatmentName }
     : mockAgreements.find(a => a.id === agreementId) || { id: agreementId, patientId, patientName: state.currentPatient?.name };
+
+  // Get patient details
+  const patient = demoPatients.find(p => p.id === patientId) || state.currentPatient || null;
 
   const currentStatus = useAutoStatus ? autoStatus : manualStatus;
   const currentSequence = useAutoStatus ? autoSequence : manualSequence;
@@ -329,9 +333,25 @@ export default function FollowUpScreen() {
   };
 
   // List view mode - show all follow-ups with filter
-  const [viewMode, setViewMode] = useState(patientId && agreementId ? 'detail' : 'list');
+  // Initialize viewMode based on whether we have patient/agreement from location state
+  const [viewMode, setViewMode] = useState(() => {
+    const locPatientId = location.state?.patientId;
+    const locAgreementId = location.state?.agreementId;
+    return (locPatientId && locAgreementId) || (patientId && agreementId) ? 'detail' : 'list';
+  });
   const [filterPatientId, setFilterPatientId] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Update viewMode when location state changes (e.g., after navigation)
+  useEffect(() => {
+    const locPatientId = location.state?.patientId;
+    const locAgreementId = location.state?.agreementId;
+    if (locPatientId && locAgreementId) {
+      setViewMode('detail');
+    } else if (!patientId || !agreementId) {
+      setViewMode('list');
+    }
+  }, [location.state, patientId, agreementId]);
 
   // Get all follow-ups for list view
   const allFollowUps = useMemo(() => {
@@ -410,17 +430,26 @@ export default function FollowUpScreen() {
 
   // Handle selecting a follow-up
   const handleSelectFollowUp = (selectedPatientId, selectedAgreementId) => {
+    if (!selectedPatientId || !selectedAgreementId) {
+      console.error('Missing patientId or agreementId');
+      return;
+    }
     navigate('/followup', { 
       state: { 
         patientId: selectedPatientId, 
         agreementId: selectedAgreementId 
       } 
     });
+    // Force re-render by updating viewMode
     setViewMode('detail');
   };
 
   // If no patient/agreement selected, show list view
   if (!patientId || !agreementId || viewMode === 'list') {
+    // Reset viewMode if we have valid data
+    if (patientId && agreementId && viewMode === 'detail') {
+      // This shouldn't happen, but just in case
+    }
     return (
       <div className="max-w-7xl mx-auto">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
@@ -546,6 +575,28 @@ export default function FollowUpScreen() {
     );
   }
 
+  // Safety check: if we don't have required data, show error or fallback
+  if (!patientId || !agreementId) {
+    return (
+      <div className="max-w-6xl mx-auto">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+          <div className="text-center py-12">
+            <p className="text-gray-500 mb-4">Patient or Agreement information is missing.</p>
+            <button
+              onClick={() => {
+                setViewMode('list');
+                navigate('/followup');
+              }}
+              className="bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+            >
+              Back to List
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-6xl mx-auto">
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
@@ -601,36 +652,43 @@ export default function FollowUpScreen() {
           <div className="space-y-3 mb-4 max-h-64 overflow-y-auto">
             {communications && communications.length > 0 ? (
               communications.map((comm) => (
-              <div
-                key={comm.id}
-                className={`p-4 rounded-lg border ${
-                  comm.direction === 'outbound'
-                    ? 'bg-blue-50 border-blue-200'
-                    : 'bg-green-50 border-green-200'
-                }`}
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      comm.type === 'SMS' ? 'bg-purple-100 text-purple-800' :
-                      comm.type === 'Email' ? 'bg-blue-100 text-blue-800' :
-                      'bg-teal-100 text-teal-800'
-                    }`}>
-                      {comm.type}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      {formatDate(comm.date)} • {comm.direction === 'outbound' ? 'Outbound' : 'Inbound'}
-                    </span>
+                comm.type === 'SMS' ? (
+                  <SMSMessage 
+                    key={comm.id} 
+                    message={comm} 
+                    patientPhone={patient?.phone || '(555) 123-4567'} 
+                  />
+                ) : (
+                  <div
+                    key={comm.id}
+                    className={`p-4 rounded-lg border ${
+                      comm.direction === 'outbound'
+                        ? 'bg-blue-50 border-blue-200'
+                        : 'bg-green-50 border-green-200'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                          comm.type === 'Email' ? 'bg-blue-100 text-blue-800' :
+                          'bg-teal-100 text-teal-800'
+                        }`}>
+                          {comm.type}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {formatDate(comm.date)} • {comm.direction === 'outbound' ? 'Outbound' : 'Inbound'}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-700 mb-2">{comm.content}</p>
+                    {comm.response && (
+                      <div className="mt-2 pt-2 border-t border-gray-200">
+                        <p className="text-xs font-medium text-gray-600 mb-1">Patient Response:</p>
+                        <p className="text-sm text-gray-800 italic">"{comm.response}"</p>
+                      </div>
+                    )}
                   </div>
-                </div>
-                <p className="text-sm text-gray-700 mb-2">{comm.content}</p>
-                {comm.response && (
-                  <div className="mt-2 pt-2 border-t border-gray-200">
-                    <p className="text-xs font-medium text-gray-600 mb-1">Patient Response:</p>
-                    <p className="text-sm text-gray-800 italic">"{comm.response}"</p>
-                  </div>
-                )}
-              </div>
+                )
               ))
             ) : (
               <div className="text-center py-8 text-gray-500 text-sm">
@@ -641,14 +699,24 @@ export default function FollowUpScreen() {
 
           {/* Add New Communication */}
           <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">Add Communication</h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-gray-900">Add Communication</h3>
+              {newCommunication.type === 'SMS' && (
+                <div className="flex items-center gap-1 px-2 py-1 bg-purple-50 rounded text-xs">
+                  <svg className="w-3 h-3 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                  </svg>
+                  <span className="text-purple-700 font-semibold">Twilio SMS</span>
+                </div>
+              )}
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
               <select
                 value={newCommunication.type}
                 onChange={(e) => setNewCommunication({ ...newCommunication, type: e.target.value })}
                 className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-teal-500"
               >
-                <option value="SMS">SMS</option>
+                <option value="SMS">SMS (via Twilio)</option>
                 <option value="Email">Email</option>
                 <option value="Call">Call</option>
               </select>

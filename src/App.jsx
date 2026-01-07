@@ -11,6 +11,7 @@ import FollowUpScreen from './screens/FollowUpScreen';
 import FollowUpQueueScreen from './screens/FollowUpQueueScreen';
 import AdminPanel from './screens/AdminPanel';
 import AnalyticsDashboard from './screens/AnalyticsDashboard';
+import SuperAdminDashboard from './screens/SuperAdminDashboard';
 import PatientDashboard from './screens/PatientDashboard';
 import PatientAgreement from './screens/PatientAgreement';
 import PatientPayment from './screens/PatientPayment';
@@ -34,6 +35,7 @@ function App() {
             <Route path="/queue" element={<FollowUpQueueScreen />} />
             <Route path="/analytics" element={<AnalyticsDashboard />} />
             <Route path="/admin" element={<AdminPanel />} />
+            <Route path="/super-admin" element={<SuperAdminDashboard />} />
             {/* Patient routes */}
             <Route path="/patient" element={<PatientDashboard />} />
             <Route path="/patient/agreement" element={<PatientAgreement />} />

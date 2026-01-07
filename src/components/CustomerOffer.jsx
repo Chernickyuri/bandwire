@@ -91,6 +91,49 @@ export default function CustomerOffer({ onClose }) {
                 board-certified orthodontists. Treatment duration may vary based on individual 
                 patient response and compliance with treatment instructions.
               </p>
+
+              {/* Treatment Breakdown */}
+              {consultation.breakdown && consultation.breakdown.length > 0 && (
+                <div className="mb-4 bg-white rounded-lg p-4 border border-teal-200">
+                  <h5 className="text-sm font-semibold text-gray-900 mb-3">Treatment Breakdown</h5>
+                  
+                  {consultation.breakdown.filter(item => item.type === 'service').length > 0 && (
+                    <div className="mb-3">
+                      <h6 className="text-xs font-semibold text-blue-700 mb-2">Services</h6>
+                      <div className="space-y-1">
+                        {consultation.breakdown.filter(item => item.type === 'service').map((item) => (
+                          <div key={item.id} className="flex justify-between text-xs">
+                            <span className="text-gray-700">{item.name} (Qty: {item.quantity})</span>
+                            <span className="font-semibold text-gray-900">{formatCurrency(item.total || 0)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {consultation.breakdown.filter(item => item.type === 'material').length > 0 && (
+                    <div className="mb-3">
+                      <h6 className="text-xs font-semibold text-green-700 mb-2">Materials</h6>
+                      <div className="space-y-1">
+                        {consultation.breakdown.filter(item => item.type === 'material').map((item) => (
+                          <div key={item.id} className="flex justify-between text-xs">
+                            <span className="text-gray-700">{item.name} (Qty: {item.quantity})</span>
+                            <span className="font-semibold text-gray-900">{formatCurrency(item.total || 0)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="mt-3 pt-3 border-t border-teal-200 flex justify-between items-center">
+                    <span className="text-sm font-semibold text-gray-900">Total:</span>
+                    <span className="text-lg font-bold text-teal-600">
+                      {formatCurrency(consultation.breakdown.reduce((sum, item) => sum + (item.total || 0), 0))}
+                    </span>
+                  </div>
+                </div>
+              )}
+
               <div className="flex items-baseline">
                 <span className="text-4xl font-bold text-teal-600">
                   {formatCurrency(consultation.totalCost)}
