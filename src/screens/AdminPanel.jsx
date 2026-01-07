@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import FinancialFirewall from '../components/FinancialFirewall';
-import CSVImport from '../components/CSVImport';
 import IntegrationStatus from '../components/IntegrationStatus';
 import { paymentPresets as initialPaymentPresets } from '../data/demoData';
 
@@ -263,9 +262,6 @@ export default function AdminPanel() {
           </div>
         )}
       </div>
-
-      {/* CSV Import Section */}
-      <CSVImport />
 
       {/* Integration Status Section */}
       <IntegrationStatus />
