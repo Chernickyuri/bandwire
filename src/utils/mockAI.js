@@ -1,6 +1,8 @@
 export const getObjectionSuggestion = (objection, currentPlan) => {
   const lowerObjection = objection.toLowerCase();
-  const { totalCost, downPayment, installments } = currentPlan;
+  const { totalCost, insuranceCoverage = 0, downPayment, installments } = currentPlan;
+  // Calculate patient's out-of-pocket cost (after insurance)
+  const patientCost = totalCost - insuranceCoverage;
 
   let suggestion = {
     explanation: '',
@@ -17,8 +19,8 @@ export const getObjectionSuggestion = (objection, currentPlan) => {
   if (lowerObjection.includes('expensive') || lowerObjection.includes('too much') || lowerObjection.includes('cost') || lowerObjection.includes('price')) {
     const newDownPayment = Math.max(500, Math.floor(downPayment * 0.5));
     const newInstallments = Math.min(24, installments * 2);
-    const newMonthly = (totalCost - newDownPayment) / newInstallments;
-    const oldMonthly = (totalCost - downPayment) / installments;
+    const newMonthly = (patientCost - newDownPayment) / newInstallments;
+    const oldMonthly = (patientCost - downPayment) / installments;
     const monthlyReduction = ((oldMonthly - newMonthly) / oldMonthly * 100).toFixed(0);
     
     suggestion.explanation = `I've analyzed the patient's language patterns and detected strong cost sensitivity indicators. Based on our historical data from 1,247 similar consultations, patients expressing affordability concerns have a 73% conversion rate when offered flexible payment terms. 
@@ -50,7 +52,7 @@ Here's what I can offer you: we can reduce the down payment to ${formatCurrency(
 
 The total cost remains the same, we're just restructuring the payment schedule to work better with your budget. Many of our patients find this approach much more manageable, and it allows them to get the treatment they need without financial stress. Would this work better for you?"`;
   } else if (lowerObjection.includes("can't afford") || lowerObjection.includes('afford') || lowerObjection.includes('budget')) {
-    const minMonthly = (totalCost - 500) / 24;
+    const minMonthly = (patientCost - 500) / 24;
     suggestion.explanation = `Strong affordability signal detected. The patient's language ("can't afford", "budget") indicates significant financial constraints. Analysis of 2,134 similar cases shows that offering the most flexible terms (minimum down payment + maximum term) results in 81% conversion rate for this objection type.
 
 Recommended approach: Minimum down payment ($500) with maximum payment term (24 months). This strategy:
@@ -76,7 +78,7 @@ Conversion Probability: 81% (high confidence based on historical data).`;
     };
     suggestion.script = `"I completely understand - budget concerns are real and important. Let me show you the most flexible option we have available.
 
-We can do the absolute minimum down payment of ${formatCurrency(500)} - that's the lowest we can go per our policies - and then spread the remaining ${formatCurrency(totalCost - 500)} over 24 months. That works out to just ${formatCurrency(minMonthly)} per month.
+We can do the absolute minimum down payment of ${formatCurrency(500)} - that's the lowest we can go per our policies - and then spread the remaining ${formatCurrency(patientCost - 500)} over 24 months. That works out to just ${formatCurrency(minMonthly)} per month.
 
 To put that in perspective, that's about the same as a nice dinner out or a couple of streaming subscriptions. We really want to make sure you can get the treatment you need without it causing financial stress. This is the most flexible plan we offer, and many of our patients find it works well for their situation. Does this feel more manageable?"`;
   } else if (lowerObjection.includes('time') || lowerObjection.includes('think') || lowerObjection.includes('decide')) {
@@ -92,7 +94,7 @@ To put that in perspective, that's about the same as a nice dinner out or a coup
       downPayment: Math.max(500, Math.floor(downPayment * 0.6)),
       installments: 24,
     };
-    suggestion.script = `"I understand you want to keep the monthly payments lower. We can reduce the down payment to ${formatCurrency(suggestion.suggestedChanges.downPayment)} and extend payments to 24 months. This brings your monthly payment down to ${formatCurrency((totalCost - suggestion.suggestedChanges.downPayment) / 24)}. That should be much more comfortable for your monthly budget."`;
+    suggestion.script = `"I understand you want to keep the monthly payments lower. We can reduce the down payment to ${formatCurrency(suggestion.suggestedChanges.downPayment)} and extend payments to 24 months. This brings your monthly payment down to ${formatCurrency((patientCost - suggestion.suggestedChanges.downPayment) / 24)}. That should be much more comfortable for your monthly budget."`;
   } else {
     // Default generic response
     suggestion.explanation = `Based on the patient's concern, I recommend adjusting the payment plan to be more flexible. We can reduce the initial financial commitment while maintaining our minimum requirements.`;

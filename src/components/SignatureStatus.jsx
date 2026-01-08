@@ -8,7 +8,7 @@ export default function SignatureStatus({
   signedDate,
   patientName,
   patientEmail,
-  provider = 'Dropbox Sign' // 'DocuSign' or 'Dropbox Sign'
+  provider = 'DocuSign' // Default to DocuSign
 }) {
   const [currentStatus, setCurrentStatus] = useState('draft');
   const [statusHistory, setStatusHistory] = useState([]);

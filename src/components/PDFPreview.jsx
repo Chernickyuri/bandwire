@@ -8,8 +8,10 @@ export default function PDFPreview() {
   const { state } = useApp();
   const { currentPatient, consultation } = state;
   const [isGenerating, setIsGenerating] = useState(false);
+  // Calculate patient's out-of-pocket cost (after insurance)
+  const patientCost = consultation.totalCost - (consultation.insuranceCoverage || 0);
   const monthlyPayment = calculateMonthlyPayment(
-    consultation.totalCost,
+    patientCost,
     consultation.downPayment,
     consultation.installments
   );
@@ -167,16 +169,28 @@ export default function PDFPreview() {
         <div className="mb-6">
           <h2 className="text-lg font-bold text-gray-900 mb-3 uppercase tracking-wide">Financial Agreement</h2>
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-5 mb-4">
-            <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-2 gap-4 text-sm mb-4">
               <div>
                 <span className="font-semibold text-gray-700">Total Treatment Fee:</span>
-                <p className="text-2xl font-bold text-blue-600">{formatCurrency(consultation.totalCost)}</p>
+                <p className="text-xl font-bold text-blue-600">{formatCurrency(consultation.totalCost)}</p>
               </div>
               <div>
                 <span className="font-semibold text-gray-700">Agreement Date:</span>
                 <p className="text-lg text-gray-900">{formattedDate}</p>
               </div>
             </div>
+            {consultation.insuranceCoverage > 0 && (
+              <div className="pt-4 border-t border-blue-300">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-semibold text-gray-700">Insurance Coverage:</span>
+                  <span className="text-lg font-bold text-blue-600">-{formatCurrency(consultation.insuranceCoverage)}</span>
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t border-blue-300">
+                  <span className="font-semibold text-gray-900">Patient's Out-of-Pocket Cost:</span>
+                  <span className="text-2xl font-bold text-teal-600">{formatCurrency(patientCost)}</span>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="bg-gray-50 p-4 rounded-lg mb-4">
@@ -196,7 +210,7 @@ export default function PDFPreview() {
               </div>
               <div className="flex justify-between items-center py-2 bg-blue-50 -mx-4 px-4 py-3 mt-2">
                 <span className="font-semibold text-gray-900">Remaining Balance:</span>
-                <span className="font-bold text-blue-600 text-lg">{formatCurrency(consultation.totalCost - consultation.downPayment)}</span>
+                <span className="font-bold text-blue-600 text-lg">{formatCurrency(patientCost - consultation.downPayment)}</span>
               </div>
             </div>
           </div>

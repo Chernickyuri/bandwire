@@ -6,6 +6,8 @@ import { calculateMonthlyPayment, formatCurrency } from '../utils/helpers';
 export default function PaymentPlanEditor({ showErrors = true, onValidationChange }) {
   const { state, updateConsultation } = useApp();
   const { consultation, rules } = state;
+  // Calculate patient's out-of-pocket cost (after insurance)
+  const patientCost = consultation.totalCost - (consultation.insuranceCoverage || 0);
   const [errors, setErrors] = useState([]);
   const [localDownPayment, setLocalDownPayment] = useState(consultation.downPayment);
   const [localInstallments, setLocalInstallments] = useState(consultation.installments);
@@ -19,7 +21,7 @@ export default function PaymentPlanEditor({ showErrors = true, onValidationChang
     const validationErrors = validatePaymentPlan(
       downPayment,
       installments,
-      consultation.totalCost,
+      patientCost, // Use patient cost (after insurance) for validation
       rules
     );
     setErrors(validationErrors);
@@ -34,7 +36,7 @@ export default function PaymentPlanEditor({ showErrors = true, onValidationChang
     const validationErrors = validatePaymentPlan(
       numValue,
       localInstallments,
-      consultation.totalCost,
+      patientCost, // Use patient cost (after insurance) for validation
       rules
     );
     
@@ -60,7 +62,7 @@ export default function PaymentPlanEditor({ showErrors = true, onValidationChang
     const validationErrors = validatePaymentPlan(
       localDownPayment,
       numValue,
-      consultation.totalCost,
+      patientCost, // Use patient cost (after insurance) for validation
       rules
     );
     
@@ -85,7 +87,7 @@ export default function PaymentPlanEditor({ showErrors = true, onValidationChang
     const fixed = autoFixPaymentPlan(
       localDownPayment,
       localInstallments,
-      consultation.totalCost,
+      patientCost, // Use patient cost (after insurance) for auto-fix
       rules
     );
     setLocalDownPayment(fixed.downPayment);
@@ -98,7 +100,7 @@ export default function PaymentPlanEditor({ showErrors = true, onValidationChang
   };
 
   const monthlyPayment = calculateMonthlyPayment(
-    consultation.totalCost,
+    patientCost, // Use patient cost (after insurance) for monthly payment calculation
     localDownPayment,
     localInstallments
   );

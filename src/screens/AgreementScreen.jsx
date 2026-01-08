@@ -2,14 +2,13 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import PDFPreview from '../components/PDFPreview';
-import SignatureCanvas from '../components/SignatureCanvas';
 import SignatureStatus from '../components/SignatureStatus';
 import { validatePaymentPlan } from '../utils/rulesEngine';
 import { mockAgreements, demoPatients } from '../data/demoData';
 import { formatDate, formatCurrency, calculateMonthlyPayment } from '../utils/helpers';
 
 export default function AgreementScreen() {
-  const { state, finalizeAgreement, signAgreement, sendForSignature, updatePatient } = useApp();
+  const { state, finalizeAgreement, sendForSignature, updatePatient } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
   const [selectedAgreement, setSelectedAgreement] = useState(null);
@@ -169,28 +168,6 @@ export default function AgreementScreen() {
     }
   };
 
-  const handleSign = (signatureData) => {
-    signAgreement(signatureData);
-    // Update agreement in list
-    const agreementId = selectedAgreement?.id || 'CURRENT';
-    setAgreements(agreements.map(a => 
-      a.id === agreementId
-        ? { ...a, signed: true, status: 'Signed', signedDate: new Date().toISOString(), signatureData }
-        : a
-    ));
-    // Update selected agreement
-    if (selectedAgreement) {
-      setSelectedAgreement({
-        ...selectedAgreement,
-        signed: true,
-        status: 'Signed',
-        signedDate: new Date().toISOString(),
-        signatureData,
-      });
-    }
-    navigate('/payment');
-  };
-
   const handleSendForSignature = () => {
     const patient = demoPatients.find(p => p.id === (selectedAgreement?.patientId || state.currentPatient?.id)) || state.currentPatient;
     
@@ -324,14 +301,6 @@ export default function AgreementScreen() {
                 </div>
               )}
 
-              {/* Digital Signature Section */}
-              <div className="mt-6">
-                <h2 className="text-xl font-semibold text-gray-800 mb-4">Digital Signature</h2>
-                <p className="text-sm text-gray-600 mb-4">
-                  Patient can sign directly here, or you can send the agreement for them to sign remotely.
-                </p>
-                <SignatureCanvas onSign={handleSign} />
-              </div>
             </>
           ) : (
             <>

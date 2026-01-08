@@ -21,7 +21,7 @@ const integrations = [
   },
   {
     id: 'docusign',
-    name: 'Dropbox Sign',
+    name: 'DocuSign',
     description: 'E-signature and document management',
     status: 'connected',
     icon: '📝',

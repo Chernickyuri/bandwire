@@ -267,20 +267,31 @@ export async function generateAgreementPDF(patient, consultation) {
   });
   yPosition -= 20;
   
+  // Calculate patient's out-of-pocket cost (after insurance)
+  const patientCost = consultation.totalCost - (consultation.insuranceCoverage || 0);
   const monthlyPayment = calculateMonthlyPayment(
-    consultation.totalCost,
+    patientCost,
     consultation.downPayment,
     consultation.installments
   );
-  
+
   const financialInfo = [
     ['Total Treatment Fee:', formatCurrency(consultation.totalCost)],
+  ];
+  
+  // Add insurance coverage if applicable
+  if (consultation.insuranceCoverage > 0) {
+    financialInfo.push(['Insurance Coverage:', `-${formatCurrency(consultation.insuranceCoverage)}`]);
+    financialInfo.push(['Patient\'s Out-of-Pocket Cost:', formatCurrency(patientCost)]);
+  }
+  
+  financialInfo.push(
     ['Agreement Date:', formatDate(new Date().toISOString())],
     ['Initial Down Payment:', formatCurrency(consultation.downPayment)],
     ['Monthly Payment Amount:', formatCurrency(monthlyPayment)],
     ['Number of Monthly Payments:', `${consultation.installments} months`],
-    ['Remaining Balance:', formatCurrency(consultation.totalCost - consultation.downPayment)],
-  ];
+    ['Remaining Balance:', formatCurrency(patientCost - consultation.downPayment)],
+  );
   
   financialInfo.forEach(([label, value]) => {
     page.drawText(label, {

@@ -9,6 +9,7 @@ const initialState = {
   consultation: {
     treatmentName: 'Braces – Full Treatment',
     totalCost: 5000,
+    insuranceCoverage: 0, // Amount covered by insurance
     downPayment: 1000,
     installments: 12,
     breakdown: [], // Treatment breakdown (services and materials)

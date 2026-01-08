@@ -5,8 +5,10 @@ import { formatCurrency, calculateMonthlyPayment, formatDate } from '../utils/he
 export default function CustomerOffer({ onClose }) {
   const { state } = useApp();
   const { consultation, currentPatient } = state;
-  const monthly = calculateMonthlyPayment(consultation.totalCost, consultation.downPayment, consultation.installments);
-  const totalRemaining = consultation.totalCost - consultation.downPayment;
+  // Calculate patient's out-of-pocket cost (after insurance)
+  const patientCost = consultation.totalCost - (consultation.insuranceCoverage || 0);
+  const monthly = calculateMonthlyPayment(patientCost, consultation.downPayment, consultation.installments);
+  const totalRemaining = patientCost - consultation.downPayment;
   const today = new Date();
 
   return (
@@ -134,11 +136,29 @@ export default function CustomerOffer({ onClose }) {
                 </div>
               )}
 
+              {consultation.insuranceCoverage > 0 && (
+                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-700">Total Treatment Cost:</span>
+                    <span className="text-sm font-semibold text-gray-900">{formatCurrency(consultation.totalCost)}</span>
+                  </div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-blue-700">Insurance Coverage:</span>
+                    <span className="text-sm font-semibold text-blue-600">-{formatCurrency(consultation.insuranceCoverage)}</span>
+                  </div>
+                  <div className="flex items-center justify-between pt-2 border-t border-blue-200">
+                    <span className="text-sm font-semibold text-gray-900">Your Out-of-Pocket Cost:</span>
+                    <span className="text-lg font-bold text-teal-600">{formatCurrency(patientCost)}</span>
+                  </div>
+                </div>
+              )}
               <div className="flex items-baseline">
                 <span className="text-4xl font-bold text-teal-600">
-                  {formatCurrency(consultation.totalCost)}
+                  {formatCurrency(patientCost)}
                 </span>
-                <span className="ml-2 text-gray-600">Total Treatment Cost</span>
+                <span className="ml-2 text-gray-600">
+                  {consultation.insuranceCoverage > 0 ? 'Your Out-of-Pocket Cost' : 'Total Treatment Cost'}
+                </span>
               </div>
             </div>
           </div>
@@ -153,7 +173,7 @@ export default function CustomerOffer({ onClose }) {
                 </div>
                 <div className="text-sm font-medium text-gray-700 mb-1">Initial Down Payment</div>
                 <div className="text-xs text-gray-500">
-                  {((consultation.downPayment / consultation.totalCost) * 100).toFixed(0)}% of total
+                  {((consultation.downPayment / patientCost) * 100).toFixed(0)}% of total
                 </div>
               </div>
               <div className="bg-white border-2 border-gray-200 rounded-lg p-6 text-center">

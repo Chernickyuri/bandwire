@@ -24,32 +24,41 @@ export default function ConsultationScreen() {
   const [loading, setLoading] = useState(false);
   const [showAISection, setShowAISection] = useState(false);
 
+  // Calculate patient's out-of-pocket cost (total cost minus insurance coverage)
+  const patientCost = state.consultation.totalCost - (state.consultation.insuranceCoverage || 0);
+
   // Auto-validate DCE when payment plan changes
   useEffect(() => {
     const errors = validatePaymentPlan(
       state.consultation.downPayment,
       state.consultation.installments,
-      state.consultation.totalCost,
+      patientCost, // Use patient cost (after insurance) for validation
       state.rules
     );
     setValidationErrors(errors);
     setDceValidated(errors.length === 0);
-  }, [state.consultation.downPayment, state.consultation.installments, state.consultation.totalCost, state.rules]);
+  }, [state.consultation.downPayment, state.consultation.installments, patientCost, state.rules]);
 
   const handleTreatmentChange = (e) => {
     const selectedTreatment = treatmentOptions.find(t => t.id === e.target.value);
     if (selectedTreatment) {
       const breakdown = selectedTreatment.breakdown ? [...selectedTreatment.breakdown] : [];
-      const calculatedTotal = breakdown.reduce((sum, item) => sum + (item.total || 0), 0) || selectedTreatment.typicalCost;
+      // If breakdown exists, calculate total from breakdown, otherwise use typicalCost
+      const calculatedTotal = breakdown.length > 0 
+        ? breakdown.reduce((sum, item) => sum + (item.total || 0), 0)
+        : selectedTreatment.typicalCost;
       updateConsultation({ 
         treatmentName: selectedTreatment.name,
         totalCost: calculatedTotal,
         breakdown: breakdown,
+        // Reset insurance coverage when treatment changes
+        insuranceCoverage: 0,
       });
     }
   };
 
   const handleBreakdownChange = (updatedBreakdown) => {
+    // Automatically recalculate totalCost from breakdown
     const newTotal = updatedBreakdown.reduce((sum, item) => sum + (item.total || 0), 0);
     updateConsultation({ 
       breakdown: updatedBreakdown,
@@ -60,6 +69,11 @@ export default function ConsultationScreen() {
   const handleTotalCostChange = (e) => {
     const value = parseFloat(e.target.value) || 0;
     updateConsultation({ totalCost: value });
+  };
+
+  const handleInsuranceCoverageChange = (e) => {
+    const value = parseFloat(e.target.value) || 0;
+    updateConsultation({ insuranceCoverage: value });
   };
 
   const handlePresetSelect = (preset) => {
@@ -82,7 +96,7 @@ export default function ConsultationScreen() {
       const validationErrors = validatePaymentPlan(
         aiSuggestion.suggestedChanges.downPayment,
         aiSuggestion.suggestedChanges.installments,
-        state.consultation.totalCost,
+        patientCost, // Use patient cost (after insurance) for validation
         state.rules
       );
       
@@ -114,7 +128,7 @@ export default function ConsultationScreen() {
         const fixedErrors = validatePaymentPlan(
           fixed.downPayment,
           fixed.installments,
-          state.consultation.totalCost,
+          patientCost, // Use patient cost (after insurance) for validation
           state.rules
         );
         setAiValidationErrors(fixedErrors);
@@ -176,7 +190,10 @@ export default function ConsultationScreen() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Total Cost
+              Total Treatment Cost
+              {state.consultation.breakdown && state.consultation.breakdown.length > 0 && (
+                <span className="ml-2 text-xs text-gray-500 font-normal">(Auto-calculated from breakdown)</span>
+              )}
             </label>
             <div className="relative">
               <span className="absolute left-4 top-3 text-gray-500">$</span>
@@ -184,10 +201,70 @@ export default function ConsultationScreen() {
                 type="number"
                 value={state.consultation.totalCost}
                 onChange={handleTotalCostChange}
-                className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg"
+                disabled={state.consultation.breakdown && state.consultation.breakdown.length > 0}
+                className={`w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg ${
+                  state.consultation.breakdown && state.consultation.breakdown.length > 0
+                    ? 'bg-gray-100 cursor-not-allowed'
+                    : ''
+                }`}
               />
             </div>
+            {state.consultation.breakdown && state.consultation.breakdown.length > 0 && (
+              <p className="mt-1 text-xs text-gray-500">
+                Total is automatically calculated from treatment breakdown. Edit breakdown to change the total.
+              </p>
+            )}
           </div>
+        </div>
+
+        {/* Insurance Coverage */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Insurance Coverage Amount
+          </label>
+          <div className="relative">
+            <span className="absolute left-4 top-3 text-gray-500">$</span>
+            <input
+              type="number"
+              value={state.consultation.insuranceCoverage || 0}
+              onChange={handleInsuranceCoverageChange}
+              min="0"
+              max={state.consultation.totalCost}
+              className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg"
+              placeholder="0.00"
+            />
+          </div>
+          {(state.consultation.insuranceCoverage > 0 || (state.consultation.breakdown && state.consultation.breakdown.length > 0)) && (
+            <div className="mt-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              {state.consultation.breakdown && state.consultation.breakdown.length > 0 && (
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">Breakdown Total (Total Treatment Cost):</span>
+                  <span className="text-lg font-semibold text-gray-900">{formatCurrency(state.consultation.totalCost)}</span>
+                </div>
+              )}
+              {!state.consultation.breakdown || state.consultation.breakdown.length === 0 ? (
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">Total Treatment Cost:</span>
+                  <span className="text-lg font-semibold text-gray-900">{formatCurrency(state.consultation.totalCost)}</span>
+                </div>
+              ) : null}
+              {state.consultation.insuranceCoverage > 0 && (
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-blue-700">Insurance Coverage:</span>
+                  <span className="text-lg font-semibold text-blue-600">-{formatCurrency(state.consultation.insuranceCoverage)}</span>
+                </div>
+              )}
+              <div className="flex items-center justify-between pt-2 border-t border-blue-200">
+                <span className="text-base font-semibold text-gray-900">Patient's Out-of-Pocket Cost:</span>
+                <span className="text-xl font-bold text-teal-600">{formatCurrency(patientCost)}</span>
+              </div>
+              {state.consultation.breakdown && state.consultation.breakdown.length > 0 && state.consultation.insuranceCoverage > 0 && (
+                <p className="mt-2 text-xs text-gray-600 italic">
+                  Formula: Breakdown Total ({formatCurrency(state.consultation.totalCost)}) - Insurance Coverage ({formatCurrency(state.consultation.insuranceCoverage)}) = {formatCurrency(patientCost)}
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Treatment Breakdown */}
